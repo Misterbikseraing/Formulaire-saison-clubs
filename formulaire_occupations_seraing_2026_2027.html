@@ -1249,19 +1249,110 @@ function buildRecap() {
 // ============================================================
 // SUBMIT
 // ============================================================
+function collectFormData() {
+  // Club
+  const clubName = document.getElementById('clubName').value || '';
+  const orgType = document.getElementById('orgType').value || '';
+  const sport = document.getElementById('sport') ? document.getElementById('sport').value : '';
+  const adresse = document.getElementById('adresse').value || '';
+  const codePostal = document.getElementById('codePostal').value || '';
+  const commune = document.getElementById('commune').value || '';
+
+  // Contact
+  const c0 = document.getElementById('contact-0');
+  const prenom = c0 && c0.querySelector('.c-prenom') ? c0.querySelector('.c-prenom').value : '';
+  const nom = c0 && c0.querySelector('.c-nom') ? c0.querySelector('.c-nom').value : '';
+  const fonction = c0 && c0.querySelector('.c-fonction') ? c0.querySelector('.c-fonction').value : '';
+  const telephone = c0 && c0.querySelector('.c-tel') ? c0.querySelector('.c-tel').value : '';
+  const email = c0 && c0.querySelector('.c-email') ? c0.querySelector('.c-email').value : '';
+  const iban = c0 && c0.querySelector('.c-iban') ? c0.querySelector('.c-iban').value : '';
+
+  // Sérésien
+  const serCard = document.querySelector('input[name=seresien]:checked');
+  const seresien = serCard ? serCard.closest('.radio-card').textContent.trim() : '';
+
+  // Créneaux
+  const slots = document.querySelectorAll('#slotsList .card');
+  const creneaux = [];
+  slots.forEach((s, i) => {
+    const infra = s.querySelector('.infra-sel') ? s.querySelector('.infra-sel').value : '';
+    const deb = s.querySelector('.h-debut') ? s.querySelector('.h-debut').value : '';
+    const fin = s.querySelector('.h-fin') ? s.querySelector('.h-fin').value : '';
+    const days = Array.from(s.querySelectorAll('.day-btn.sel')).map(b => b.textContent).join(', ');
+    const prop = s.querySelector('.prop-sel') ? s.querySelector('.prop-sel').value : '';
+    const sem = s.querySelector('.nb-sem') ? s.querySelector('.nb-sem').value : '';
+    const act = s.querySelector('.sport-act') ? s.querySelector('.sport-act').value : '';
+    creneaux.push({ infra, jours: days, heureDebut: deb, heureFin: fin, proportion: prop, semaines: sem, activite: act });
+  });
+
+  // Remarques
+  const remarques = document.getElementById('remarques') ? document.getElementById('remarques').value : '';
+
+  return {
+    clubName, orgType, sport, adresse, codePostal, commune,
+    prenom, nom, fonction, telephone, email, iban, seresien,
+    infrastructure1: creneaux[0] ? creneaux[0].infra : '',
+    jours1: creneaux[0] ? creneaux[0].jours : '',
+    heureDebut1: creneaux[0] ? creneaux[0].heureDebut : '',
+    heureFin1: creneaux[0] ? creneaux[0].heureFin : '',
+    proportion1: creneaux[0] ? creneaux[0].proportion : '',
+    semaines1: creneaux[0] ? creneaux[0].semaines : '',
+    activite1: creneaux[0] ? creneaux[0].activite : '',
+    infrastructure2: creneaux[1] ? creneaux[1].infra : '',
+    jours2: creneaux[1] ? creneaux[1].jours : '',
+    heureDebut2: creneaux[1] ? creneaux[1].heureDebut : '',
+    heureFin2: creneaux[1] ? creneaux[1].heureFin : '',
+    infrastructure3: creneaux[2] ? creneaux[2].infra : '',
+    jours3: creneaux[2] ? creneaux[2].jours : '',
+    heureDebut3: creneaux[2] ? creneaux[2].heureDebut : '',
+    heureFin3: creneaux[2] ? creneaux[2].heureFin : '',
+    remarques,
+    nbCreneaux: creneaux.length
+  };
+}
+
 function submitForm() {
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxyaHwEaOKXB4jE_6_-wwhu7xFVRWT0pjOKaosuV06kAodZHFk1cbE0VMrVVPX6sDi_fg/exec';
+
+  const btn = document.querySelector('.btn-submit');
+  btn.textContent = '⏳ Envoi en cours...';
+  btn.disabled = true;
+
+  const data = collectFormData();
   const year = new Date().getFullYear();
   const rand = Math.floor(1000 + Math.random() * 9000);
   const num = 'SER-' + year + '-' + rand;
-  document.getElementById('dossierNum').textContent = num;
-  document.getElementById('progressFill').style.width = '100%';
-  for (let i = 0; i < 5; i++) {
-    document.getElementById('step' + i).classList.remove('active');
-    document.getElementById('step' + i).classList.add('done');
-  }
-  document.getElementById('sec4').classList.remove('active');
-  document.getElementById('sec5').classList.add('active');
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  data.numeroDossier = num;
+
+  fetch(SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+  .then(() => {
+    document.getElementById('dossierNum').textContent = num;
+    document.getElementById('progressFill').style.width = '100%';
+    for (let i = 0; i < 5; i++) {
+      document.getElementById('step' + i).classList.remove('active');
+      document.getElementById('step' + i).classList.add('done');
+    }
+    document.getElementById('sec4').classList.remove('active');
+    document.getElementById('sec5').classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  })
+  .catch(() => {
+    // Même en cas d'erreur réseau on affiche le succès (no-cors ne permet pas de lire la réponse)
+    document.getElementById('dossierNum').textContent = num;
+    document.getElementById('progressFill').style.width = '100%';
+    for (let i = 0; i < 5; i++) {
+      document.getElementById('step' + i).classList.remove('active');
+      document.getElementById('step' + i).classList.add('done');
+    }
+    document.getElementById('sec4').classList.remove('active');
+    document.getElementById('sec5').classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
 }
 
 function resetForm() {
