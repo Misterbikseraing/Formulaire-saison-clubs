@@ -1,5 +1,5 @@
-[formulaire_occupations_seraing_2026_2027 (1).html](https://github.com/user-attachments/files/28627002/formulaire_occupations_seraing_2026_2027.1.html)
-# Formulaire-saison-clubs<!DOCTYPE html>
+
+<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -1313,7 +1313,7 @@ function collectFormData() {
 }
 
 function submitForm() {
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzcZj8CXGmUjGHPq5VRjSHZGxa3W6rfNqcF9sdBIx715sL0-iy77yKLwFYqYh0Ibln6/exec';
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxyaHwEaOKXB4jE_6_-wwhu7xFVRWT0pjOKaosuV06kAodZHFk1cbE0VMrVVPX6sDi_fg/exec';
 
   const btn = document.querySelector('.btn-submit');
   btn.textContent = '⏳ Envoi en cours...';
@@ -1325,35 +1325,43 @@ function submitForm() {
   const num = 'SER-' + year + '-' + rand;
   data.numeroDossier = num;
 
-  fetch(SCRIPT_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
-  })
-  .then(() => {
-    document.getElementById('dossierNum').textContent = num;
-    document.getElementById('progressFill').style.width = '100%';
-    for (let i = 0; i < 5; i++) {
-      document.getElementById('step' + i).classList.remove('active');
-      document.getElementById('step' + i).classList.add('done');
-    }
-    document.getElementById('sec4').classList.remove('active');
-    document.getElementById('sec5').classList.add('active');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  })
-  .catch(() => {
-    // Même en cas d'erreur réseau on affiche le succès (no-cors ne permet pas de lire la réponse)
-    document.getElementById('dossierNum').textContent = num;
-    document.getElementById('progressFill').style.width = '100%';
-    for (let i = 0; i < 5; i++) {
-      document.getElementById('step' + i).classList.remove('active');
-      document.getElementById('step' + i).classList.add('done');
-    }
-    document.getElementById('sec4').classList.remove('active');
-    document.getElementById('sec5').classList.add('active');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Iframe caché pour contourner les restrictions CORS
+  const iframeName = 'hidden_iframe_' + Date.now();
+  const iframe = document.createElement('iframe');
+  iframe.name = iframeName;
+  iframe.style.display = 'none';
+  document.body.appendChild(iframe);
+
+  // Formulaire caché avec champs individuels
+  const hiddenForm = document.createElement('form');
+  hiddenForm.method = 'POST';
+  hiddenForm.action = SCRIPT_URL;
+  hiddenForm.target = iframeName;
+  hiddenForm.style.display = 'none';
+
+  Object.keys(data).forEach(key => {
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = key;
+    input.value = data[key] || '';
+    hiddenForm.appendChild(input);
   });
+
+  document.body.appendChild(hiddenForm);
+
+  setTimeout(() => {
+    document.getElementById('dossierNum').textContent = num;
+    document.getElementById('progressFill').style.width = '100%';
+    for (let i = 0; i < 5; i++) {
+      document.getElementById('step' + i).classList.remove('active');
+      document.getElementById('step' + i).classList.add('done');
+    }
+    document.getElementById('sec4').classList.remove('active');
+    document.getElementById('sec5').classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, 2000);
+
+  hiddenForm.submit();
 }
 
 function resetForm() {
